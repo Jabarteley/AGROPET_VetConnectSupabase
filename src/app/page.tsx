@@ -80,11 +80,46 @@ export default async function Home() {
             </div>
           </div>
           <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
-            <div className="h-64 w-full bg-indigo-50 sm:h-80 md:h-96 lg:w-full lg:h-full flex items-center justify-center">
-              <div className="text-center p-4">
-                <div className="text-6xl mb-4">🏥</div>
-                <p className="text-xl font-semibold text-gray-700">Veterinary Services</p>
-                <p className="mt-2 text-gray-600">Connecting you with trusted professionals</p>
+            <div className="h-64 w-full bg-indigo-50 sm:h-80 md:h-96 lg:w-full lg:h-full grid grid-cols-2 gap-2 p-2">
+              <div className="bg-gray-200 rounded-lg overflow-hidden">
+                <img
+                  src="/veterinary-animal-welfare.jpg"
+                  alt="Pet Care"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-center py-1 text-sm">
+                  Pet Care
+                </div>
+              </div>
+              <div className="bg-gray-200 rounded-lg overflow-hidden">
+                <img
+                  src="/images.jfif"
+                  alt="Livestock Care"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-center py-1 text-sm">
+                  Livestock Care
+                </div>
+              </div>
+              <div className="bg-gray-200 rounded-lg overflow-hidden">
+                <img
+                  src="/download.jfif"
+                  alt="Expert Vet"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-center py-1 text-sm">
+                  Expert Vet
+                </div>
+              </div>
+              <div className="bg-gray-200 rounded-lg overflow-hidden">
+                <img
+                  src="/one.jfif"
+                  alt="Consultation"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-center py-1 text-sm">
+                  Consultation
+                </div>
               </div>
             </div>
           </div>
