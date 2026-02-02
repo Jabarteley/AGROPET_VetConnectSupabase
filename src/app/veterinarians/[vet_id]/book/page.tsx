@@ -3,6 +3,7 @@ import BookingForm from '@/components/BookingForm';
 import { cookies } from 'next/headers';
 import { verifyToken, getUserById } from '@/lib/auth';
 import { profileOperations } from '@/lib/dbOperations';
+import { vetScheduleOperations } from '@/lib/dbOperations';
 
 export default async function BookingPage({ params }: { params: { vet_id: string } }) {
   const cookieStore = cookies();
@@ -39,14 +40,19 @@ export default async function BookingPage({ params }: { params: { vet_id: string
     );
   }
 
-  // Check if the vet is available for appointments
-  if (!vet.is_available) {
+  // Get the vet's schedule
+  const vetSchedule = vetScheduleOperations.getByVetId(decodedVetId);
+
+  // Check if the vet has any availability in their schedule
+  const hasWeeklyAvailability = vetSchedule.some(day => day.is_available);
+
+  if (!hasWeeklyAvailability) {
     return (
       <div className="flex flex-col items-center p-4">
         <div className="w-full max-w-2xl">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Appointment Unavailable</h1>
           <p className="text-lg text-gray-600 mb-8">
-            Dr. {vet.name} is currently unavailable for new appointments.
+            Dr. {vet.name} currently has no available times for appointments.
           </p>
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
             <div className="flex">
@@ -57,7 +63,7 @@ export default async function BookingPage({ params }: { params: { vet_id: string
                       </div>
                       <div className="ml-3">
                         <p className="text-sm text-yellow-700">
-                          <span className="font-medium">Note:</span> This veterinarian has marked themselves as unavailable for new appointments.
+                          <span className="font-medium">Note:</span> This veterinarian has not set any available times for appointments.
                           Please check back later or find another veterinarian.
                         </p>
                       </div>
@@ -83,7 +89,7 @@ export default async function BookingPage({ params }: { params: { vet_id: string
         <p className="text-lg text-gray-600 mb-8">
           With <span className="font-semibold">Dr. {vet.name}</span>
         </p>
-        <BookingForm user={user} vet={vet} />
+        <BookingForm user={user} vet={vet} vetSchedule={vetSchedule} />
       </div>
     </div>
   );

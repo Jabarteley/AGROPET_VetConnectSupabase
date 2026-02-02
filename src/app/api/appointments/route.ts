@@ -2,7 +2,7 @@
 import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyToken, getUserById } from '@/lib/auth';
-import { appointmentOperations } from '@/lib/dbOperations';
+import { appointmentOperations, vetScheduleOperations } from '@/lib/dbOperations';
 import cloudinary from 'cloudinary';
 
 // Configure Cloudinary
@@ -45,6 +45,28 @@ export async function POST(request: NextRequest) {
     // Verify that the user_id matches the authenticated user
     if (userId !== user.id) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    // Validate that the appointment time is within the vet's available hours
+    const appointmentDate = new Date(appointmentDatetime);
+    const dayOfWeek = appointmentDate.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const appointmentTime = appointmentDate.toTimeString().substring(0, 5); // Format: HH:MM
+
+    // Get the vet's schedule
+    const vetSchedule = vetScheduleOperations.getByVetId(vetId);
+
+    // Find the schedule for the appointment day
+    const daySchedule = vetSchedule.find(schedule => schedule.day_of_week === dayOfWeek);
+
+    if (!daySchedule || !daySchedule.is_available) {
+      return Response.json({ error: 'The veterinarian is not available on the selected date' }, { status: 400 });
+    }
+
+    // Check if the appointment time is within the vet's available hours
+    if (appointmentTime < daySchedule.start_time || appointmentTime > daySchedule.end_time) {
+      return Response.json({
+        error: `The appointment time is outside the veterinarian's available hours (${daySchedule.start_time} - ${daySchedule.end_time})`
+      }, { status: 400 });
     }
 
     // Handle image uploads

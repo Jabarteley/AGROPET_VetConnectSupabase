@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 
@@ -9,16 +9,77 @@ type VetProfile = {
   name: string | null
 }
 
-export default function BookingForm({ user, vet }: { user: User; vet: VetProfile }) {
+type ScheduleItem = {
+  day_of_week: number; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  start_time: string;  // Format: HH:MM
+  end_time: string;    // Format: HH:MM
+  is_available: boolean;
+}
+
+export default function BookingForm({ user, vet, vetSchedule }: { user: User; vet: VetProfile; vetSchedule: ScheduleItem[] }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [availableTimes, setAvailableTimes] = useState<string[]>([])
 
   // Form state
   const [appointmentDate, setAppointmentDate] = useState('')
   const [appointmentTime, setAppointmentTime] = useState('')
   const [reason, setReason] = useState('')
   const [images, setImages] = useState<File[]>([])
+
+  // Calculate available times when date changes
+  useEffect(() => {
+    if (appointmentDate) {
+      const selectedDate = new Date(appointmentDate);
+      const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+      // Find the schedule for the selected day
+      const daySchedule = vetSchedule.find(schedule => schedule.day_of_week === dayOfWeek);
+
+      if (daySchedule && daySchedule.is_available) {
+        // Generate available times between start and end time in 30-minute intervals
+        const [startHour, startMinute] = daySchedule.start_time.split(':').map(Number);
+        const [endHour, endMinute] = daySchedule.end_time.split(':').map(Number);
+
+        const times: string[] = [];
+        let currentHour = startHour;
+        let currentMinute = startMinute;
+
+        while ((currentHour < endHour) || (currentHour === endHour && currentMinute < endMinute)) {
+          const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+          times.push(timeString);
+
+          // Increment by 30 minutes
+          currentMinute += 30;
+          if (currentMinute >= 60) {
+            currentHour++;
+            currentMinute = 0;
+          }
+
+          // Stop if we exceed the end time
+          if (currentHour > endHour || (currentHour === endHour && currentMinute > endMinute)) {
+            break;
+          }
+        }
+
+        setAvailableTimes(times);
+
+        // If the currently selected time is not in the available times, reset it
+        if (times.length > 0 && !times.includes(appointmentTime)) {
+          setAppointmentTime(times[0]); // Default to first available time
+        } else if (times.length === 0) {
+          setAppointmentTime(''); // No available times
+        }
+      } else {
+        setAvailableTimes([]); // Day is not available
+        setAppointmentTime(''); // Reset time selection
+      }
+    } else {
+      setAvailableTimes([]);
+      setAppointmentTime('');
+    }
+  }, [appointmentDate, vetSchedule]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -38,6 +99,24 @@ export default function BookingForm({ user, vet }: { user: User; vet: VetProfile
 
     if (!appointmentDate || !appointmentTime) {
       setMessage('Please select a date and time.')
+      setLoading(false)
+      return
+    }
+
+    // Validate that the selected time is within the vet's available hours
+    const selectedDate = new Date(appointmentDate);
+    const dayOfWeek = selectedDate.getDay();
+    const daySchedule = vetSchedule.find(schedule => schedule.day_of_week === dayOfWeek);
+
+    if (!daySchedule || !daySchedule.is_available) {
+      setMessage('The selected date is not available for this veterinarian.')
+      setLoading(false)
+      return
+    }
+
+    // Check if the selected time is within the vet's available hours
+    if (appointmentTime < daySchedule.start_time || appointmentTime > daySchedule.end_time) {
+      setMessage(`The selected time is outside the veterinarian's available hours (${daySchedule.start_time} - ${daySchedule.end_time}).`)
       setLoading(false)
       return
     }
@@ -101,14 +180,22 @@ export default function BookingForm({ user, vet }: { user: User; vet: VetProfile
         <label htmlFor="appointmentTime" className="block text-sm font-medium text-gray-700">
           Select a Time
         </label>
-        <input
+        <select
           id="appointmentTime"
-          type="time"
           value={appointmentTime}
           onChange={(e) => setAppointmentTime(e.target.value)}
           required
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-        />
+          disabled={availableTimes.length === 0}
+          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm disabled:bg-gray-100"
+        >
+          <option value="">Select a time</option>
+          {availableTimes.map((time, index) => (
+            <option key={index} value={time}>{time}</option>
+          ))}
+        </select>
+        {availableTimes.length === 0 && appointmentDate && (
+          <p className="mt-1 text-sm text-red-600">No available times for the selected date.</p>
+        )}
       </div>
 
       <div>
@@ -181,7 +268,7 @@ export default function BookingForm({ user, vet }: { user: User; vet: VetProfile
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || availableTimes.length === 0}
         className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
       >
         {loading ? 'Requesting...' : 'Request Appointment'}
