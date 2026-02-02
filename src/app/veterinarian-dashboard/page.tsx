@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { verifyToken, getUserById } from '@/lib/auth';
 import { profileOperations } from '@/lib/dbOperations';
-import AvailabilityToggle from '@/components/AvailabilityToggle';
 import VetScheduleManager from '@/components/VetScheduleManager';
 import { vetScheduleOperations } from '@/lib/dbOperations';
 
@@ -41,12 +40,6 @@ export default async function VeterinarianDashboard() {
     <div className="flex flex-col items-center p-4 w-full">
       <div className="w-full max-w-2xl px-4">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Veterinarian Dashboard</h1>
-
-        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Availability Status</h2>
-
-          <AvailabilityToggle profile={profile} />
-        </div>
 
         <VetScheduleManager profile={profile} />
 

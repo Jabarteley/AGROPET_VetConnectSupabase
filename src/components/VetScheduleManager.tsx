@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 type DaySchedule = {
@@ -41,6 +41,37 @@ export default function VetScheduleManager({ profile }: { profile: Profile }) {
       is_available: false,
     }))
   );
+
+  // Load existing schedule if available
+  useEffect(() => {
+    const loadSchedule = async () => {
+      try {
+        const response = await fetch(`/api/veterinarian-schedule/${encodeURIComponent(profile.id)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.schedule) {
+            // Map the loaded schedule to match our expected format
+            const loadedSchedule = daysOfWeek.map(day => {
+              const existingDay = data.schedule.find((s: DaySchedule) => s.day_of_week === day.id);
+              return existingDay || {
+                day_of_week: day.id,
+                start_time: '09:00',
+                end_time: '17:00',
+                is_available: false,
+              };
+            });
+            setSchedule(loadedSchedule);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading schedule:', error);
+      }
+    };
+
+    if (profile.id) {
+      loadSchedule();
+    }
+  }, [profile.id]);
 
   const handleDayChange = (dayId: number, field: keyof DaySchedule, value: string | boolean) => {
     setSchedule(prevSchedule => 

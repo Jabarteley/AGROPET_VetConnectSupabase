@@ -70,7 +70,7 @@ export default function VetScheduleDisplay({ vetId }: VetScheduleProps) {
   return (
     <div className="mt-2">
       <h4 className="text-sm font-medium text-gray-700 mb-1">Weekly Schedule</h4>
-      
+
       {availableDays.length > 0 ? (
         <div className="space-y-1">
           {availableDays.map((day) => {

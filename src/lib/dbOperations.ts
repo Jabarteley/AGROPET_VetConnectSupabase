@@ -389,3 +389,70 @@ export const vetScheduleOperations = {
     return result ? normalizeRow(result) : null;
   }
 };
+
+// Separate function to get profiles with schedules
+export function getProfilesWithSchedules(filters?: { role?: string; verification_status?: string }) {
+  let query = `
+    SELECT p.*,
+           vs.day_of_week,
+           vs.start_time,
+           vs.end_time,
+           vs.is_available as schedule_is_available
+    FROM profiles p
+    LEFT JOIN veterinarian_schedules vs ON p.id = vs.vet_id
+  `;
+  const params: any[] = [];
+
+  if (filters) {
+    const conditions = [];
+
+    if (filters.role) {
+      conditions.push('p.role = ?');
+      params.push(filters.role);
+    }
+
+    if (filters.verification_status) {
+      conditions.push('p.verification_status = ?');
+      params.push(filters.verification_status);
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+  }
+
+  query += ' ORDER BY p.created_at DESC, vs.day_of_week ASC';
+
+  const stmt = db.prepare(query);
+  const results = stmt.all(...params);
+
+  // Group results by profile
+  const groupedResults: any[] = [];
+  const profileMap = new Map();
+
+  results.forEach(row => {
+    if (!profileMap.has(row.id)) {
+      // Create a new profile object with an empty schedule array
+      const profile = { ...row, schedule: [] };
+      delete profile.day_of_week;
+      delete profile.start_time;
+      delete profile.end_time;
+      delete profile.schedule_is_available;
+      profileMap.set(row.id, profile);
+      groupedResults.push(profile);
+    }
+
+    // Add schedule info if it exists
+    if (row.day_of_week !== null) {
+      const profile = profileMap.get(row.id);
+      profile.schedule.push({
+        day_of_week: row.day_of_week,
+        start_time: row.start_time,
+        end_time: row.end_time,
+        is_available: row.schedule_is_available
+      });
+    }
+  });
+
+  return groupedResults.map(normalizeRow);
+}
