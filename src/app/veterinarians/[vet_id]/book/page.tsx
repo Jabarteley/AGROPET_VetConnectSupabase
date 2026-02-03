@@ -82,6 +82,14 @@ export default async function BookingPage({ params }: { params: { vet_id: string
     );
   }
 
+  // Cast the schedule to the expected type for BookingForm
+  const typedSchedule = vetSchedule.map(item => ({
+    day_of_week: item.day_of_week,
+    start_time: item.start_time,
+    end_time: item.end_time,
+    is_available: item.is_available
+  }));
+
   return (
     <div className="flex flex-col items-center p-4">
       <div className="w-full max-w-2xl">
@@ -89,7 +97,7 @@ export default async function BookingPage({ params }: { params: { vet_id: string
         <p className="text-lg text-gray-600 mb-8">
           With <span className="font-semibold">Dr. {vet.name}</span>
         </p>
-        <BookingForm user={user} vet={vet} vetSchedule={vetSchedule} />
+        <BookingForm user={user} vet={vet} vetSchedule={typedSchedule} />
       </div>
     </div>
   );

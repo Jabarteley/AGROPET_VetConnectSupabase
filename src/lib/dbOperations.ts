@@ -424,13 +424,13 @@ export function getProfilesWithSchedules(filters?: { role?: string; verification
   query += ' ORDER BY p.created_at DESC, vs.day_of_week ASC';
 
   const stmt = db.prepare(query);
-  const results = stmt.all(...params);
+  const results: any[] = stmt.all(...params);
 
   // Group results by profile
   const groupedResults: any[] = [];
-  const profileMap = new Map();
+  const profileMap = new Map<string, any>();
 
-  results.forEach(row => {
+  results.forEach((row: any) => {
     if (!profileMap.has(row.id)) {
       // Create a new profile object with an empty schedule array
       const profile = { ...row, schedule: [] };

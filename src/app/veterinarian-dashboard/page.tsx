@@ -36,12 +36,19 @@ export default async function VeterinarianDashboard() {
   // Fetch the veterinarian's schedule
   const vetSchedule = vetScheduleOperations.getByVetId(user.id);
 
+  // Cast profile to the expected type for VetScheduleManager
+  const typedProfile = {
+    id: profile.id,
+    name: profile.name,
+    is_available: profile.is_available
+  };
+
   return (
     <div className="flex flex-col items-center p-4 w-full">
       <div className="w-full max-w-2xl px-4">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Veterinarian Dashboard</h1>
 
-        <VetScheduleManager profile={profile} />
+        <VetScheduleManager profile={typedProfile} />
 
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 mt-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
